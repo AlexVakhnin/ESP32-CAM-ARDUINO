@@ -6,7 +6,7 @@
 #include "camera_pins.h"
 
 const char* ssid = "tenda";
-const char* password = "tenda_639122";
+const char* password = "tenda_";
 
 void startCameraServer();
 void setupLedFlash(int pin);
@@ -78,20 +78,6 @@ void setup() {
   pinMode(14, INPUT_PULLUP);
 #endif
 
-
-/*
-  if(psramFound()){
-    config.frame_size = FRAMESIZE_UXGA;
-    config.jpeg_quality = 10;
-    config.fb_count = 2;
-    Serial.println("\nESP32-CAM found PSRAM");
-  } else {
-    config.frame_size = FRAMESIZE_SVGA;
-    config.jpeg_quality = 12;
-    config.fb_count = 1;
-    Serial.println("\nESP32-CAM not found PSRAM");
-  }
-*/
 
   Serial.println("-----------------------------------------");
   Serial.printf("Total heap:\t%d \r\n", ESP.getHeapSize());

@@ -35,7 +35,8 @@ void setup() {
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
-  config.frame_size = FRAMESIZE_UXGA;
+  //config.frame_size = FRAMESIZE_UXGA;
+  config.frame_size = FRAMESIZE_VGA;
   config.pixel_format = PIXFORMAT_JPEG; // for streaming
   //config.pixel_format = PIXFORMAT_RGB565; // for face detection/recognition
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
@@ -68,16 +69,17 @@ void setup() {
   } else {
     // Best option for face detection/recognition
     config.frame_size = FRAMESIZE_240X240;
+    Serial.println("\nESP32-CAM not handle JPEG");
 #if CONFIG_IDF_TARGET_ESP32S3
     config.fb_count = 2;
 #endif
   }
-
+/*
 #if defined(CAMERA_MODEL_ESP_EYE)
   pinMode(13, INPUT_PULLUP);
   pinMode(14, INPUT_PULLUP);
 #endif
-
+*/
 
   Serial.println("-----------------------------------------");
   Serial.printf("Total heap:\t%d \r\n", ESP.getHeapSize());
@@ -107,10 +109,14 @@ void setup() {
     s->set_vflip(s, 1); // flip it back
     s->set_brightness(s, 1); // up the brightness just a bit
     s->set_saturation(s, -2); // lower the saturation
+    Serial.println("Camera OV3660 found..");
   }
+
+  /*
   // drop down frame size for higher initial frame rate
   if(config.pixel_format == PIXFORMAT_JPEG){
-    s->set_framesize(s, FRAMESIZE_QVGA);
+    //s->set_framesize(s, FRAMESIZE_QVGA); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! УСТАНОВКА
+    s->set_framesize(s, FRAMESIZE_SVGA);
   }
 
 #if defined(CAMERA_MODEL_M5STACK_WIDE) || defined(CAMERA_MODEL_M5STACK_ESP32CAM)
@@ -121,6 +127,7 @@ void setup() {
 #if defined(CAMERA_MODEL_ESP32S3_EYE)
   s->set_vflip(s, 1);
 #endif
+*/
 
 // Setup LED FLash if LED pin is defined in camera_pins.h
 #if defined(LED_GPIO_NUM)
@@ -137,7 +144,7 @@ void setup() {
   Serial.println("");
   Serial.println("WiFi connected");
 
-  startCameraServer();
+  startCameraServer();  //стартуем сервер
 
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.localIP());

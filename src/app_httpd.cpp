@@ -78,7 +78,7 @@
 #define CONFIG_LED_MAX_INTENSITY 255
 
 int led_duty = 0;
-bool isStreaming = false;
+bool isStreaming = false; //!!!!!!!!!!!!!!!!!!!
 
 #endif
 
@@ -517,12 +517,13 @@ static esp_err_t capture_handler(httpd_req_t *req)
 #endif
 }
 
-static esp_err_t stream_handler(httpd_req_t *req)
+//****************************************************************************************************
+static esp_err_t stream_handler(httpd_req_t *req)  //обработчик стрима
 {
-    camera_fb_t *fb = NULL;
+    camera_fb_t *fb = NULL;  //фрейм-буфер
     struct timeval _timestamp;
     esp_err_t res = ESP_OK;
-    size_t _jpg_buf_len = 0;
+    size_t _jpg_buf_len = 0;  //длина буфера
     uint8_t *_jpg_buf = NULL;
     char *part_buf[128];
 #if CONFIG_ESP_FACE_DETECT_ENABLED
@@ -552,13 +553,13 @@ static esp_err_t stream_handler(httpd_req_t *req)
         last_frame = esp_timer_get_time();
     }
 
-    res = httpd_resp_set_type(req, _STREAM_CONTENT_TYPE);
+    res = httpd_resp_set_type(req, _STREAM_CONTENT_TYPE); //тип ответа сервера STREAM
     if (res != ESP_OK)
     {
         return res;
     }
 
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");  //дополнтельные хэдэры
     httpd_resp_set_hdr(req, "X-Framerate", "60");
 
 #if CONFIG_LED_ILLUMINATOR_ENABLED
@@ -566,7 +567,7 @@ static esp_err_t stream_handler(httpd_req_t *req)
     enable_led(true);
 #endif
 
-    while (true)
+    while (true)  //.............................................. бесконечный цикл stream START..
     {
 #if CONFIG_ESP_FACE_DETECT_ENABLED
     #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
@@ -575,7 +576,7 @@ static esp_err_t stream_handler(httpd_req_t *req)
         face_id = 0;
 #endif
 
-        fb = esp_camera_fb_get();
+        fb = esp_camera_fb_get(); //получаем очередной кадр с камеры -> fb структура
         if (!fb)
         {
             log_e("Camera capture failed");
@@ -596,7 +597,7 @@ static esp_err_t stream_handler(httpd_req_t *req)
             if (!detection_enabled || fb->width > 400)
             {
 #endif
-                if (fb->format != PIXFORMAT_JPEG)
+                if (fb->format != PIXFORMAT_JPEG) //если формат не JPEG , преобразуем..
                 {
                     bool jpeg_converted = frame2jpg(fb, 80, &_jpg_buf, &_jpg_buf_len);
                     esp_camera_fb_return(fb);
@@ -607,12 +608,12 @@ static esp_err_t stream_handler(httpd_req_t *req)
                         res = ESP_FAIL;
                     }
                 }
-                else
+                else //формат JPEG получен с камеры
                 {
-                    _jpg_buf_len = fb->len;
-                    _jpg_buf = fb->buf;
+                    _jpg_buf_len = fb->len; //длина масства пикселей кадра
+                    _jpg_buf = fb->buf;  //указатель на массив пикселей кадра
                 }
-#if CONFIG_ESP_FACE_DETECT_ENABLED
+#if CONFIG_ESP_FACE_DETECT_ENABLED //начало обработки FACE DETECTION
             }
             else
             {
@@ -724,7 +725,7 @@ static esp_err_t stream_handler(httpd_req_t *req)
                     }
                 }
             }
-#endif
+#endif      //конец обработки FACE DETECTION
         }
         if (res == ESP_OK)
         {
@@ -737,7 +738,7 @@ static esp_err_t stream_handler(httpd_req_t *req)
         }
         if (res == ESP_OK)
         {
-            res = httpd_resp_send_chunk(req, (const char *)_jpg_buf, _jpg_buf_len);
+            res = httpd_resp_send_chunk(req, (const char *)_jpg_buf, _jpg_buf_len); //посылаем кадр в поток
         }
         if (fb)
         {
@@ -750,7 +751,7 @@ static esp_err_t stream_handler(httpd_req_t *req)
             free(_jpg_buf);
             _jpg_buf = NULL;
         }
-        if (res != ESP_OK)
+        if (res != ESP_OK) //если очередной кадр не получен, выход из цикла
         {
             log_e("Send frame failed");
             break;
@@ -765,12 +766,12 @@ static esp_err_t stream_handler(httpd_req_t *req)
         int64_t process_time = (fr_encode - fr_start) / 1000;
 #endif
 
-        int64_t frame_time = fr_end - last_frame;
+        int64_t frame_time = fr_end - last_frame;  //считаем время
         frame_time /= 1000;
 #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
         uint32_t avg_frame_time = ra_filter_run(&ra_filter, frame_time);
 #endif
-        log_i("MJPG: %uB %ums (%.1ffps), AVG: %ums (%.1ffps)"
+        log_i("MJPG: %uB %ums (%.1ffps), AVG: %ums (%.1ffps)"  // пишем лог
 #if CONFIG_ESP_FACE_DETECT_ENABLED
                       ", %u+%u+%u+%u=%u %s%d"
 #endif
@@ -784,16 +785,17 @@ static esp_err_t stream_handler(httpd_req_t *req)
                  (detected) ? "DETECTED " : "", face_id
 #endif
         );
-    }
+    }  //....................................................... бесконечный цикл stream END
 
 #if CONFIG_LED_ILLUMINATOR_ENABLED
-    isStreaming = false;
-    enable_led(false);
+    isStreaming = false;  //выключаем стрим
+    enable_led(false);   //гасим подсветку
 #endif
 
     return res;
 }
 
+//***********************************************************************************************
 static esp_err_t parse_get(httpd_req_t *req, char **obuf)
 {
     char *buf = NULL;
@@ -816,15 +818,16 @@ static esp_err_t parse_get(httpd_req_t *req, char **obuf)
     return ESP_FAIL;
 }
 
-static esp_err_t cmd_handler(httpd_req_t *req)
+static esp_err_t cmd_handler(httpd_req_t *req)  //обработка команд в httpd - запросе (типа POST)
 {
     char *buf = NULL;
     char variable[32];
     char value[32];
 
-    if (parse_get(req, &buf) != ESP_OK) {
+    if (parse_get(req, &buf) != ESP_OK) { //парсим в буфер
         return ESP_FAIL;
     }
+    // получаем значениея ключей в массивах variable[32] либо value[32]
     if (httpd_query_key_value(buf, "var", variable, sizeof(variable)) != ESP_OK ||
         httpd_query_key_value(buf, "val", value, sizeof(value)) != ESP_OK) {
         free(buf);
@@ -835,7 +838,7 @@ static esp_err_t cmd_handler(httpd_req_t *req)
 
     int val = atoi(value);
     log_i("%s = %d", variable, val);
-    sensor_t *s = esp_camera_sensor_get();
+    sensor_t *s = esp_camera_sensor_get();  //получаем обьект SENSOR
     int res = 0;
 
     if (!strcmp(variable, "framesize")) {
@@ -1202,12 +1205,15 @@ static esp_err_t index_handler(httpd_req_t *req)
     }
 }
 
+//************************************************************************************************
+//  СЕРВЕР СТАРТ
+//
 void startCameraServer()
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.max_uri_handlers = 16;
 
-    httpd_uri_t index_uri = {
+    httpd_uri_t index_uri = {  //"/" - index.html GET
         .uri = "/",
         .method = HTTP_GET,
         .handler = index_handler,
@@ -1220,7 +1226,7 @@ void startCameraServer()
 #endif
     };
 
-    httpd_uri_t status_uri = {
+    httpd_uri_t status_uri = {  // STATUS GET
         .uri = "/status",
         .method = HTTP_GET,
         .handler = status_handler,
@@ -1233,7 +1239,7 @@ void startCameraServer()
 #endif
     };
 
-    httpd_uri_t cmd_uri = {
+    httpd_uri_t cmd_uri = {   // CONTROL GET
         .uri = "/control",
         .method = HTTP_GET,
         .handler = cmd_handler,
@@ -1259,10 +1265,10 @@ void startCameraServer()
 #endif
     };
 
-    httpd_uri_t stream_uri = {
+    httpd_uri_t stream_uri = {  // ROUTE STREEM
         .uri = "/stream",
         .method = HTTP_GET,
-        .handler = stream_handler,
+        .handler = stream_handler,  //обработчик streem
         .user_ctx = NULL
 #ifdef CONFIG_HTTPD_WS_SUPPORT
         ,
@@ -1358,7 +1364,7 @@ void startCameraServer()
     // load ids from flash partition
     recognizer.set_ids_from_flash();
 #endif
-    log_i("Starting web server on port: '%d'", config.server_port);
+    log_i("Starting web server on port: '%d'", config.server_port); // WEB SERVER PORT=80
     if (httpd_start(&camera_httpd, &config) == ESP_OK)
     {
         httpd_register_uri_handler(camera_httpd, &index_uri);
@@ -1376,7 +1382,7 @@ void startCameraServer()
 
     config.server_port += 1;
     config.ctrl_port += 1;
-    log_i("Starting stream server on port: '%d'", config.server_port);
+    log_i("Starting stream server on port: '%d'", config.server_port); // STREAM SERVER PORT=81
     if (httpd_start(&stream_httpd, &config) == ESP_OK)
     {
         httpd_register_uri_handler(stream_httpd, &stream_uri);

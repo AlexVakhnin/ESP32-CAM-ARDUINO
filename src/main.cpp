@@ -5,8 +5,8 @@
 #define CAMERA_MODEL_AI_THINKER // Has PSRAM
 #include "camera_pins.h"
 
-const char* ssid = "tenda";
-const char* password = "tenda_";
+const char* ssid = "Alpha3";
+const char* password = "asus_";
 
 void startCameraServer();
 void setupLedFlash(int pin);
